@@ -191,7 +191,6 @@ int Database::getTransactionCount() {
 
 std::vector<UserStatDto> Database::getTopUsers(int limit) {
     std::vector<UserStatDto> users;
-    // Simple join to get email (assuming users exist)
     std::string sql = "SELECT u.email, SUM(t.weight) as total " 
                       "FROM transactions t "
                       "JOIN users u ON t.user_id = u.id "
