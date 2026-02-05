@@ -30,49 +30,92 @@
 
 3 ОПИС ВИКОНАНОЇ РОБОТИ
 
-3.1 Інженерні рішення
+3.1 Адміністрування користувачів та маршрутів
 
-Для реалізації завдань було розширено структуру бази даних, додано поле `is_active` для користувачів.
-Реалізовано клас `Controllers` з новими методами:
-- `blockUser` — виконує UPDATE запит до БД для зміни статусу користувача.
-- `addWasteType` — додає новий запис у таблицю категорій.
-- `exportCsv` — формує текстовий потік даних (MIME type: `text/csv`).
+Було реалізовано можливість адміністратору керувати даними у системі. Адміністратор може додавати нові типи відходів, встановлюючи їм ціну, а також блокувати користувачів, обмежуючи їх доступ до системи. Всі дії виконуються через API, що взаємодіє з сервісами та репозиторіями, забезпечуючи цілісність даних.
+Детальна взаємодія показана на діаграмах (Додаток Б).
 
-**Експорт CSV:**
-Використано `std::stringstream` для конкатенації рядків. Це дозволяє сформувати файл "на льоту" та віддати його користувачеві без збереження на диск сервера, що економить ресурси.
+3.2 Експорт даних (CSV)
 
-3.2 Математичні методи
+Для забезпечення можливості аналізу даних сторонніми засобами було розроблено функціонал експорту транзакцій у формат CSV. Метод формує текстовий потік "на льоту", що дозволяє уникнути збереження файлів на сервері та зменшує навантаження на дискову підсистему.
+Фрагмент реалізації наведено у Додатку В.1.
 
-У контролері `getStats` реалізовано розрахунок ключових показників:
-1. **Загальна вага:** `SUM(weight)` (SQL агрегація).
-2. **Середня вага здачі:** `TotalWeight / Count`.
+3.3 Модуль статистики
 
-3.3 Фрагменти коду
+Реалізовано розрахунок глобальної статистики системи:
+- Загальна вага зібраної сировини `SUM(weight)`.
+- Загальна сума нарахованих бонусів `SUM(bonus)`.
+- Кількість транзакцій.
+- Топ користувачів за активністю (Додаток В.2).
 
-**Генерація CSV:**
-```cpp
-auto transactions = Database::getInstance().getAllTransactions();
-std::stringstream ss;
-ss << "ID,UserID,WasteID,Weight,Bonus,Timestamp\n";
+4 ВИСНОВОК
 
-for (const auto& t : transactions) {
-    ss << t.id << "," << t.user_id << "," << t.waste_id << "," 
-       << t.weight << "," << t.bonus << "\n";
-}
-crow::response res(ss.str());
-res.set_header("Content-Disposition", "attachment; filename=export.csv");
-return res;
-```
+У ході виконання роботи було розроблено ключові функції адміністрування та аналітики серверної частини системи EcoRecycle. Було реалізовано управління типами відходів та користувачами, а також функціонал експорту даних у CSV.
+Для аналітики реалізовано збір глобальної статистики, що дозволяє оцінювати ефективність роботи платформи.
+Усі функції були реалізовані з урахуванням взаємодії між шарами системи (Repository-Service-Controller), що забезпечує чистоту архітектури та легкість підтримки.
 
-**Математичний розрахунок:**
-```cpp
-double avgWeight = (count > 0) ? (totalWeight / count) : 0.0;
-```
+5 ВИКОРИСТАНІ ДЖЕРЕЛА
 
-4 ВИСНОВКИ
-
-В результаті виконання роботи система отримала інструменти для адміністративного керування даними та аналізу ефективності. Реалізація експорту в CSV забезпечує інтероперабельність системи з іншими інструментами аналізу (Excel, Google Sheets). Використання C++ дозволило реалізувати це з високою швидкодією.
+1. Crow C++ Framework Documentation. URL: https://crowcpp.org/
+2. SQLite Documentation. URL: https://www.sqlite.org/docs.html
+3. RFC 4180 - Common Format and MIME Type for Comma-Separated Values (CSV) Files.
 
 ДОДАТОК А
-Демонстраційний відеоматеріал
-Посилання: https://youtu.be/XYZ_LAB3_FAKE
+Посилання на відео: https://youtu.be/dp9Rgo0Ji_o 
+00:00 Вступ
+00:35 Функції адміністрування (блокування, додавання відходів)
+01:12 Експорт даних у CSV
+02:44 Перегляд статистики
+03:13 Тестування API
+
+ДОДАТОК Б
+Графічні матеріали
+
+Рисунок Б.1 – Діаграма класів контролерів та сервісів
+
+ДОДАТОК В
+Фрагменти коду
+
+В.1 Експорт у CSV
+```cpp
+crow::response Controllers::exportCsv(const crow::request& req) {
+    auto transactions = Database::getInstance().getAllTransactions();
+    
+    std::stringstream ss;
+    ss << "ID,UserID,WasteID,Weight,Bonus,Timestamp\n";
+    
+    for (const auto& t : transactions) {
+        ss << t.id << "," 
+           << t.user_id << "," 
+           << t.waste_id << "," 
+           << std::fixed << std::setprecision(2) << t.weight << "," 
+           << t.bonus << "," 
+           << t.timestamp << "\n";
+    }
+    
+    crow::response res(ss.str());
+    res.set_header("Content-Type", "text/csv");
+    res.set_header("Content-Disposition", "attachment; filename=export.csv");
+    return res;
+}
+```
+
+В.2 Отримання статистики (StatsService)
+```cpp
+GlobalStatsDto getGlobalStats() {
+    GlobalStatsDto stats;
+    stats.total_weight = Database::getInstance().getTotalWeight();
+    stats.total_bonuses = Database::getInstance().getTotalBonuses();
+    stats.transactions_count = Database::getInstance().getTransactionCount();
+    
+    if (stats.transactions_count > 0) {
+        stats.average_weight_per_transaction = stats.total_weight / stats.transactions_count;
+    } else {
+        stats.average_weight_per_transaction = 0.0;
+    }
+
+    stats.top_users = Database::getInstance().getTopUsers(3);
+    
+    return stats;
+}
+```
