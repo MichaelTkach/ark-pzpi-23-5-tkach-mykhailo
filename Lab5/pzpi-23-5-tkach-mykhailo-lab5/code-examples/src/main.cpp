@@ -18,8 +18,18 @@ int main() {
     CROW_ROUTE(app, "/api/admin/users/block").methods(crow::HTTPMethod::PUT)(Controllers::blockUser);
     
     CROW_ROUTE(app, "/api/admin/export/csv")(Controllers::exportCsv);
+    CROW_ROUTE(app, "/api/admin/import/csv").methods(crow::HTTPMethod::POST)(Controllers::importCsv);
     
     CROW_ROUTE(app, "/api/stats")(Controllers::getStats);
+
+    // Security Middleware
+    app.route_dynamic("/api/admin/*")
+    ([](const crow::request& req, crow::response& res) {
+        if (req.get_header_value("Authorization").empty()) {
+            res.code = 401;
+            res.end();
+        }
+    });
 
     app.port(18081).multithreaded().run();
     

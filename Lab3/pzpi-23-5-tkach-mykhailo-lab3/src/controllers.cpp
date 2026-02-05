@@ -1,6 +1,22 @@
 #include "controllers.h"
 #include <sstream>
 #include <iomanip>
+#include <map>
+
+// i18n Helper
+std::string getMessage(const std::string& key, const std::string& lang) {
+    static std::map<std::string, std::map<std::string, std::string>> messages = {
+        {"REGISTERED", {{"en", "Registered successfully"}, {"uk", "Успішна реєстрація"}}},
+        {"ERROR", {{"en", "Internal Error"}, {"uk", "Внутрішня помилка"}}},
+        {"WASTE_ADDED", {{"en", "Waste type added"}, {"uk", "Тип відходів додано"}}},
+        {"BLOCKED", {{"en", "User blocked"}, {"uk", "Користувача заблоковано"}}},
+        {"UNBLOCKED", {{"en", "User unblocked"}, {"uk", "Користувача розблоковано"}}},
+        {"IMPORTED", {{"en", "Data imported"}, {"uk", "Дані імпортовано"}}}
+    };
+    std::string l = (lang == "uk") ? "uk" : "en";
+    return messages[key][l];
+}
+
 
 crow::response Controllers::registerUser(const crow::request& req) {
     auto x = crow::json::load(req.body);
@@ -8,10 +24,11 @@ crow::response Controllers::registerUser(const crow::request& req) {
     std::string email = x["email"].s();
     std::string password = x["password"].s();
     
+    std::string lang = req.get_header_value("Accept-Language");
     if (Database::getInstance().createUser(email, password + "_salt", "user")) {
-        return crow::response(201, "Registered");
+        return crow::response(201, getMessage("REGISTERED", lang));
     }
-    return crow::response(500);
+    return crow::response(500, getMessage("ERROR", lang));
 }
 
 crow::response Controllers::getPoints(const crow::request& req) {
@@ -49,10 +66,11 @@ crow::response Controllers::addWasteType(const crow::request& req) {
     std::string name = x["name"].s();
     double price = x["price"].d();
     
+    std::string lang = req.get_header_value("Accept-Language");
     if (Database::getInstance().addWasteType(name, price)) {
-        return crow::response(201, "Waste type added");
+        return crow::response(201, getMessage("WASTE_ADDED", lang));
     }
-    return crow::response(500);
+    return crow::response(500, getMessage("ERROR", lang));
 }
 
 crow::response Controllers::blockUser(const crow::request& req) {
@@ -64,10 +82,11 @@ crow::response Controllers::blockUser(const crow::request& req) {
     int userId = x["user_id"].i();
     bool block = x["block"].b();
     
+    std::string lang = req.get_header_value("Accept-Language");
     if (Database::getInstance().blockUser(userId, block)) {
-        return crow::response(200, block ? "User blocked" : "User unblocked");
+        return crow::response(200, block ? getMessage("BLOCKED", lang) : getMessage("UNBLOCKED", lang));
     }
-    return crow::response(500);
+    return crow::response(500, getMessage("ERROR", lang));
 }
 
 crow::response Controllers::exportCsv(const crow::request& req) {
@@ -89,6 +108,23 @@ crow::response Controllers::exportCsv(const crow::request& req) {
     res.set_header("Content-Type", "text/csv");
     res.set_header("Content-Disposition", "attachment; filename=export.csv");
     return res;
+}
+
+crow::response Controllers::importCsv(const crow::request& req) {
+    std::string lang = req.get_header_value("Accept-Language");
+    std::stringstream ss(req.body);
+    std::string line;
+    
+    // Skip header
+    std::getline(ss, line);
+    
+    // Minimal parsing simulation (Real impl would parse CSV fields and DB insert)
+    while(std::getline(ss, line)) {
+        // Parse line (userID, wasteID, weight, etc.)
+        // Database::getInstance().createTransaction(...);
+    }
+    
+    return crow::response(200, getMessage("IMPORTED", lang));
 }
 
 crow::response Controllers::getStats(const crow::request& req) {

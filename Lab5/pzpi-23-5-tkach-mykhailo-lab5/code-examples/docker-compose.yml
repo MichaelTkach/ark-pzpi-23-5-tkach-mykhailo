@@ -4,7 +4,7 @@ services:
   server:
     build: .
     ports:
-      - "18080:18081" # Map host 18080 to container 18081 (as defined in Lab 3 main.cpp)
+      - "18080:18080" # Map host 18080 to container 18081 (as defined in Lab 3 main.cpp)
     volumes:
       - ./ecorecycle_lab3.db:/app/build/ecorecycle_lab3.db # Persist DB
     container_name: ecorecycle_server

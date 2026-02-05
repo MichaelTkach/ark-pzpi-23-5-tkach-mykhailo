@@ -11,6 +11,10 @@ const int POINT_ID = 101;
 const int BUTTON_PIN = 15;
 const int LED_PIN = 2; 
 
+// Configuration Constants
+const int USER_ID = 1;
+const int WASTE_ID = 1;
+
 int lastButtonState = HIGH; 
 
 void setup() {
@@ -47,12 +51,10 @@ void sendRecyclingDat() {
     http.addHeader("Content-Type", "application/json");
 
     double weight = random(50, 1000) / 100.0; 
-    int userId = 1; 
-    int wasteId = 1; 
 
     String payload = "{";
-    payload += "\"user_id\": " + String(userId) + ",";
-    payload += "\"waste_id\": " + String(wasteId) + ",";
+    payload += "\"user_id\": " + String(USER_ID) + ",";
+    payload += "\"waste_id\": " + String(WASTE_ID) + ",";
     payload += "\"weight\": " + String(weight);
     payload += "}";
 
