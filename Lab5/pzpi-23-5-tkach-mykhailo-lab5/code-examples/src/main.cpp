@@ -2,12 +2,28 @@
 #include "database.h"
 #include "controllers.h"
 
+
+struct SecurityMiddleware {
+    struct context {};
+
+    void before_handle(crow::request& req, crow::response& res, context& ctx) {
+        if (req.url.find("/api/admin") == 0) {
+            if (req.get_header_value("Authorization").empty()) {
+                res.code = 401;
+                res.end();
+            }
+        }
+    }
+
+    void after_handle(crow::request& req, crow::response& res, context& ctx) {}
+};
+
 int main() {
     if (!Database::getInstance().init("ecorecycle_lab3.db")) {
         return 1;
     }
 
-    crow::SimpleApp app;
+    crow::App<SecurityMiddleware> app;
 
     CROW_ROUTE(app, "/api/auth/register").methods(crow::HTTPMethod::POST)(Controllers::registerUser);
     CROW_ROUTE(app, "/api/points")(Controllers::getPoints);
@@ -21,15 +37,6 @@ int main() {
     CROW_ROUTE(app, "/api/admin/import/csv").methods(crow::HTTPMethod::POST)(Controllers::importCsv);
     
     CROW_ROUTE(app, "/api/stats")(Controllers::getStats);
-
-
-    app.route_dynamic("/api/admin/*")
-    ([](const crow::request& req, crow::response& res) {
-        if (req.get_header_value("Authorization").empty()) {
-            res.code = 401;
-            res.end();
-        }
-    });
 
     app.port(18081).multithreaded().run();
     
