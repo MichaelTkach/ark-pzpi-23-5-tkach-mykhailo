@@ -72,15 +72,27 @@ bool Database::init(const std::string& dbPath) {
 }
 
 bool Database::createUser(const std::string& email, const std::string& password_hash, const std::string& role) {
-    std::string sql = "INSERT INTO users (email, password_hash, role) VALUES ('" + 
-                      email + "', '" + password_hash + "', '" + role + "');";
-    char* errMsg = 0;
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        std::cerr << "Register error: " << errMsg << std::endl;
-        sqlite3_free(errMsg);
+    const char* sql = "INSERT INTO users (email, password_hash, role) VALUES (?, ?, ?);";
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
+        std::cerr << "Prepare error: " << sqlite3_errmsg(db) << std::endl;
         return false;
     }
-    return true;
+
+    sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 2, password_hash.c_str(), -1, SQLITE_STATIC);
+    sqlite3_bind_text(stmt, 3, role.c_str(), -1, SQLITE_STATIC);
+
+    bool success = false;
+    if (sqlite3_step(stmt) == SQLITE_DONE) {
+        success = true;
+    } else {
+        std::cerr << "Register error: " << sqlite3_errmsg(db) << std::endl;
+    }
+
+    sqlite3_finalize(stmt);
+    return success;
 }
 
 User Database::getUserByEmail(const std::string& email) {
@@ -108,20 +120,37 @@ std::vector<RecyclingPoint> Database::getAllPoints() {
 }
 
 bool Database::createTransaction(int userId, int wasteId, double weight, double bonus) {
-    std::string sql = "INSERT INTO transactions (user_id, waste_id, weight, bonus) VALUES (" + 
-                      std::to_string(userId) + ", " + std::to_string(wasteId) + ", " + 
-                      std::to_string(weight) + ", " + std::to_string(bonus) + ");";
-                      
-    char* errMsg = 0;
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        std::cerr << "Transaction error: " << errMsg << std::endl;
-        sqlite3_free(errMsg);
+    const char* sql = "INSERT INTO transactions (user_id, waste_id, weight, bonus) VALUES (?, ?, ?, ?);";
+    sqlite3_stmt* stmt;
+
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) != SQLITE_OK) {
+        std::cerr << "Transaction prepare error: " << sqlite3_errmsg(db) << std::endl;
         return false;
     }
+
+    sqlite3_bind_int(stmt, 1, userId);
+    sqlite3_bind_int(stmt, 2, wasteId);
+    sqlite3_bind_double(stmt, 3, weight);
+    sqlite3_bind_double(stmt, 4, bonus);
+
+    bool success = false;
+    if (sqlite3_step(stmt) == SQLITE_DONE) {
+        success = true;
+    } else {
+        std::cerr << "Transaction step error: " << sqlite3_errmsg(db) << std::endl;
+        sqlite3_finalize(stmt);
+        return false;
+    }
+    sqlite3_finalize(stmt);
     
-    std::string updateSql = "UPDATE users SET balance = balance + " + std::to_string(bonus) + 
-                            " WHERE id = " + std::to_string(userId) + ";";
-    sqlite3_exec(db, updateSql.c_str(), 0, 0, 0);
-    
+    // Update balance securely (though ID is usually safe, let's correspond to best practices)
+    const char* updateSql = "UPDATE users SET balance = balance + ? WHERE id = ?;";
+    if (sqlite3_prepare_v2(db, updateSql, -1, &stmt, 0) == SQLITE_OK) {
+        sqlite3_bind_double(stmt, 1, bonus);
+        sqlite3_bind_int(stmt, 2, userId);
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+    }
+
     return true;
 }

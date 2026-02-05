@@ -1,149 +1,245 @@
-МІНІСТЕРСТВО НАУКИ І ОСВІТИ УКРАЇНИ
+МІНІСТЕРСТВО ОСВІТИ І НАУКИ УКРАЇНИ
+ХАРКІВСЬКИЙ НАЦІОНАЛЬНИЙ УНІВЕРСИТЕТ РАДІОЕЛЕКТРОНІКИ
 
-ХАРКІВСЬКИЙ НАЦІОНАЛЬНИЙ
-УНІВЕРСИТЕТ РАДІОЕЛЕКТРОНІКИ
-
-
-КАФЕДРА ПРОГРАМНОЇ ІНЖЕНЕРІЇ
-
+Факультет Комп’ютерних наук
+Кафедра Програмної інженерії
 
 ЗВІТ
-До практичного завдання №2
-з дисципліни «Аналіз та рефакторинг коду»
+до практичного завдання №2
+з дисципліни «Аналіз та рефакторинг програмного коду»
+на тему: «Методи рефакторингу програмного коду за Мартіном Фаулером (адаптація для C++)»
 
+Виконав:
+ст. гр. ПЗПІ-23-5
+Ткач Михайло
 
-Виконав:                                                                          Перевірив:
-ст. гр. ПЗПІ-23-5                        				ст. викладач кафедри ПІ
-Ткач Михайло                              Сокорчук Ігор Петрович
-
-
-
-
-
-
-
-
-
+Перевірив:
+ст. викладач кафедри ПІ
+Сокорчук Ігор Петрович
 
 Харків 2025
-     1 ІСТОРІЯ ЗМІН
 
-№Дата Версія звіту Опис змін та виправлень 
-1 10.12.2025 0.1 Створено розділи 2, 3.1, 3.2 
-2 11.12.2025 0.2 Створено розділи 3.3, Висновки
-     2 ЗАВДАННЯ
-     
-     Обрати три методи рефакторингу та адаптувати їх приклади для мови C++.
-     
-     3 ОПИС ВИКОНАНОЇ РОБОТИ
-     
-     У рамках цієї роботи було обрано три методи рефакторингу коду:
-     1. Separate Domain from Presentation — відокремлення бізнес-логіки
-     2. Replace Inheritance with Delegation — заміна спадкування на композицію
-     3. Push Down Method — переміщення методів до дочірніх класів
-     
-     3.1 Separate domain from presentation
-     
-     Метод Separate Domain from Presentation відокремлює доменну логіку від UI. У C++ це часто реалізується через патерн MVC або просто розділенням класів.
-     
-     В додатку В.1 наведено код, де логіка змішана з `std::cout` (консольний UI).
-     В додатку В.2 логіка винесена в клас `Order`, а введення-виведення — в `ConsoleView`.
-     
-     Переваги:
-     * Можливість замінити консоль на GUI (Qt, WinAPI) без змін `Order`.
-     * Легше тестувати `Order` (Unit-тести без вводу користувача).
-     
-     3.2 Replace inheritance with delegation
-     
-     У C++ спадкування є сильним зв'язком. Якщо `Manager` та `Developer` наслідують `Employee` тільки для перевикористання коду зарплати, це призводить до проблем.
-     
-     В додатку В.3 використовується спадкування.
-     В додатку В.4 `Employee` містить вказівник на інтерфейс `IRole` (Делегування).
-     
-     Переваги:
-     * Можна змінювати роль у Run-time (Strategy pattern).
-     * Менша зв'язаність класів.
-     
-     3.3 Push down method
-     
-     Якщо метод у базовому класі використовується лише одним нащадком, його слід спустити вниз.
-     
-     В додатку В.5 базовий клас `Shape` має метод `get_radius()`, який має сенс тільки для `Circle`, але доступний і `Rectangle`. Це порушує Interface Segregation.
-     В додатку В.6 метод переміщено в `Circle`.
-     
-     Переваги:
-     * Чистіший інтерфейс базового класу.
-     * Відсутність "сміттєвих" методів у нащадків.
+1 ІСТОРІЯ ЗМІН
 
-     ВИСНОВКИ
-     
-     Рефакторинг у C++ дозволяє керувати складністю, покращувати час компіляції (через розділення залежностей) та робити код безпечнішим.
-     
-     ВИКОРИСТАНІ ДЖЕРЕЛА
-     1. Martin, Robert C. Clean Code.
-     2. Refactoring Guru.
-     
+№    Дата          Версія      Опис змін
+1    10.12.2025    0.1         Вибір методів рефакторингу, написання коду "До".
+2    11.12.2025    0.2         Реалізація рефакторингу, написання коду "Після", оформлення звіту.
+
+2 ЗАВДАННЯ
+
+     Обрати три методи рефакторингу з класичної праці Мартіна Фаулера «Refactoring: Improving the Design of Existing Code». Для кожного методу необхідно:
+     1. Описати суть методу та проблему, яку він вирішує.
+     2. Навести приклад коду мовою C++ до застосування рефакторингу.
+     3. Навести приклад коду мовою C++ після застосування рефакторингу.
+     4. Проаналізувати переваги та недоліки застосованого підходу.
+
+3 ОПИС ВИКОНАНОЇ РОБОТИ
+
+     У рамках даної практичної роботи було обрано наступні методи рефакторингу, адаптовані до специфіки мови C++:
+     1. Separate Domain from Presentation (Відокремлення доменної моделі від представлення).
+     2. Replace Inheritance with Delegation (Заміна спадкування делегуванням).
+     3. Push Down Method (Спуск методу).
+
+     3.1 Separate Domain from Presentation
+
+     Суть методу полягає у фізичному та логічному розділенні бізнес-логіки програми (Domain Logic) та коду, що відповідає за взаємодію з користувачем (Presentation / UI). У C++ це часто реалізується шляхом винесення логіки в окремі класи, які не залежать від бібліотек введення-виведення (iostream, Qt, ncurses).
+
+     Проблема:
+     Коли бізнес-логіка (наприклад, розрахунок суми замовлення або обробка транзакції) змішана з кодом введення-виведення (std::cin, std::cout), такий код стає неможливо протестувати автоматично (Unit-tests), і його важко повторно використати в іншому інтерфейсі (наприклад, графічному).
+
+     Приклад коду "До" (див. Додаток В.1):
+     Клас OrderManager містить метод ProcessOrder, який запитує дані у користувача через консоль, виконує розрахунки та друкує результат. Це порушує принцип Single Responsibility.
+
+     Приклад коду "Після" (див. Додаток В.2):
+     Код розділено на два класи:
+     * Order (Domain): Відповідає лише за дані замовлення та розрахунок суми. Не містить iostream.
+     * ConsoleView (Presentation): Відповідає за взаємодію з користувачем. Використовує клас Order.
+
+     Переваги:
+     * Тестованість: Клас Order можна покрити Unit-тестами (Google Test), оскільки він не вимагає ручного введення даних.
+     * Гнучкість: До класу Order можна легко додати графічний інтерфейс, не змінюючи його код.
+     * Чистота коду: Кожен клас має чітко визначену відповідальність.
+
+     3.2 Replace Inheritance with Delegation
+
+     Цей метод пропонує замінити відношення "є" (IS-A) на відношення "має" (HAS-A). Замість того, щоб один клас спадкував функціональність іншого, він містить посилання на об’єкт цього класу і делегує йому виконання роботи.
+
+     Проблема:
+     Спадкування у C++ є дуже сильним зв’язком, який визначається під час компіляції. Якщо спадкування використовується лише для повторного використання коду (а не для поліморфізму типів), це може призвести до крихкої ієрархії, де зміни в батьківському класі ламають дочірні. Також неможливо змінити поведінку об’єкта під час виконання програми.
+
+     Приклад коду "До" (див. Додаток В.3):
+     Класи Manager та Developer спадкують клас Employee виключно для того, щоб перевизначити метод CalculateBonus. Це створює жорстку ієрархію.
+
+     Приклад коду "Після" (див. Додаток В.4):
+     Клас Employee тепер містить вказівник (std::unique_ptr) на інтерфейс IBonusStrategy. Конкретні стратегії розрахунку бонусів (ManagerBonus, DeveloperBonus) реалізують цей інтерфейс. Клас Employee просто викликає метод стратегії.
+
+     Переваги:
+     * Гнучкість (Runtime): Можна змінити алгоритм нарахування бонусів прямо під час роботи програми (змінивши об’єкт стратегії), що неможливо при спадкуванні.
+     * Зменшення зв’язності: Клас Employee більше не залежить від деталей реалізації різних типів співробітників.
+     * Дотримання принципу Composition over Inheritance.
+
+     3.3 Push Down Method
+
+     Метод переміщується з суперкласу (батьківського) в підкласи (дочірні), якщо він використовується лише деякими з них.
+
+     Проблема:
+     Базовий клас містить методи, які мають сенс лише для одного з його нащадків. Це "забруднює" інтерфейс базового класу і може призвести до помилок, коли метод викликається для об’єкта, який його не підтримує (або змушує повертати пусті значення/кидати винятки).
+
+     Приклад коду "До" (див. Додаток В.5):
+     Абстрактний клас Shape має метод GetRadius(). Цей метод має сенс для кола (Circle), але зовсім не має сенсу для прямокутника (Rectangle). Проте, через спадкування, прямокутник змушений мати цей метод.
+
+     Приклад коду "Після" (див. Додаток В.6):
+     Метод GetRadius() переміщено виключно в клас Circle. Базовий клас Shape залишається чистим і містить лише загальні методи (GetArea).
+
+     Переваги:
+     * Чистий інтерфейс: Базовий клас Shape містить тільки те, що є спільним для всіх фігур (Interface Segregation Principle).
+     * Безпека типів: Спроба отримати радіус у прямокутника викличе помилку компіляції, а не дивну поведінку програми.
+
+ВИСНОВКИ
+
+     Виконання даної роботи дозволило на практиці застосувати фундаментальні методи рефакторингу коду мовою C++.
+     Відокремлення доменної логіки від представлення є ключовим для створення архітектурно правильних додатків, готових до автоматизованого тестування. Заміна спадкування делегуванням (через використання розумних вказівників та інтерфейсів) дозволяє створювати гнучкі системи, де поведінка об’єктів може змінюватися динамічно. Метод "Спуск методу" допомагає підтримувати чистоту інтерфейсів та ієрархії класів.
+     Застосування цих технік підвищує якість коду, зменшує технічний борг та полегшує подальшу підтримку програмного продукту.
+
+ВИКОРИСТАНІ ДЖЕРЕЛА
+1. Martin, R. C. (2008). Clean Code: A Handbook of Agile Software Craftsmanship.
+2. Fowler, M. (2018). Refactoring: Improving the Design of Existing Code (2nd Edition). Addison-Wesley Signature Series.
+3. Refactoring Guru. [Електронний ресурс]. – Режим доступу: https://refactoring.guru/design-patterns/cpp.
 
 ДОДАТОК А
-Посилання на відео (Аналогічно Pract 1, адаптовано під C++)
+Посилання на відео
+     Відеозапис з поясненням методів рефакторингу: https://youtu.be/Bqd9eKz7MNo
+     Таймкоди:
+     00:00 Вступ
+     00:40 Separate Domain from Presentation (C++ MVC)
+     01:56 Приклад коду до і після
+     02:32 Replace Inheritance with Delegation (Strategy Pattern)
+     04:26 Push Down Method (Interface Segregation)
+
+ДОДАТОК Б
+Слайди презентації
+     Рисунок Б.1 – Титульний слайд
+     Рисунок Б.2 – Схема Separate Domain from Presentation
+     Рисунок Б.3 – Діаграма класів Replace Inheritance with Delegation
+     Рисунок Б.4 – Приклад Push Down Method
 
 ДОДАТОК В
 Програмний код (C++)
 
      В.1 Код для методу Separate Domain from Presentation (ДО)
-      1 class OrderApp {
-      2 public:
-      3     void AddItem(std::string name, double price) {
-      4         // Логіка + UI
-      5         items.push_back({name, price});
-      6         std::cout << "Added: " << name << " Price: " << price << std::endl;
-      7     }
-      8 };
+      1 #include <iostream>
+      2 #include <string>
+      3 #include <vector>
+      4 
+      5 class OrderApp {
+      6 public:
+      7     void CreateOrder() {
+      8         std::cout << "Enter item name: "; // Змішування логіки та UI
+      9         std::string name;
+      10        std::cin >> name;
+      11        
+      12        std::cout << "Enter price: ";
+      13        double price;
+      14        std::cin >> price;
+      15        
+      16        items_.push_back({name, price});
+      17        std::cout << "Item added!\n";
+      18    }
+      19 private:
+      20    struct Item { std::string name; double price; };
+      21    std::vector<Item> items_;
+      22 };
 
      В.2 Код для методу Separate Domain from Presentation (ПІСЛЯ)
-      1 class Order { // Тільки логіка
-      2     std::vector<Item> items;
+      1 // Domain Layer (Чиста бізнес-логіка)
+      2 class Order {
       3 public:
-      4     void Add(Item item) { items.push_back(item); }
-      5     double Total() const { ... }
-      6 };
-      7 
-      8 class OrderView { // Тільки UI
-      9     Order& order;
-      10 public:
-      11    void PrintOrder() { ... }
-      12 };
+      4     struct Item { std::string name; double price; };
+      5     void AddItem(const std::string& name, double price) {
+      6         items_.push_back({name, price});
+      7     }
+      8     const std::vector<Item>& GetItems() const { return items_; }
+      9 private:
+      10    std::vector<Item> items_;
+      11 };
+      12 
+      13 // Presentation Layer (Інтерфейс)
+      14 class ConsoleView {
+      15 public:
+      16    void Run() {
+      17        std::string name;
+      18        double price;
+      19        // ... (Введення даних)
+      20        order_.AddItem(name, price);
+      21        std::cout << "Item added!\n";
+      22    }
+      23 private:
+      24    Order order_;
+      25 };
 
      В.3 Код для методу Replace Inheritance with Delegation (ДО)
       1 class Employee {
-      2     virtual double Bonus() { return salary * 0.1; }
-      3 };
-      4 class Manager : public Employee { ... }; // Жорстке спадкування
+      2 public:
+      3     virtual double CalculateBonus(double salary) {
+      4         return salary * 0.1;
+      5     }
+      6 };
+      7 
+      8 class Manager : public Employee { // Спадкування для зміни логіки
+      9 public:
+      10    double CalculateBonus(double salary) override {
+      11        return salary * 0.2 + 1000;
+      12    }
+      13 };
 
      В.4 Код для методу Replace Inheritance with Delegation (ПІСЛЯ)
-      1 struct IRole {
-      2     virtual double CalcBonus(double salary) = 0;
-      3 };
-      4 class Employee {
-      5     std::unique_ptr<IRole> role_; // Делегування
-      6 public:
-      7     double Bonus() { return role_->CalcBonus(salary_); }
+      1 struct IBonusStrategy { // Інтерфейс стратегії
+      2     virtual double Calculate(double salary) = 0;
+      3     virtual ~IBonusStrategy() = default;
+      4 };
+      5 
+      6 class ManagerBonus : public IBonusStrategy {
+      7     double Calculate(double salary) override { return salary * 0.2 + 1000; }
       8 };
+      9 
+      10 class Employee { // Композиція замість спадкування
+      11 public:
+      12    void SetBonusStrategy(std::unique_ptr<IBonusStrategy> strategy) {
+      13        bonus_strategy_ = std::move(strategy);
+      14    }
+      15    double GetBonus(double salary) {
+      16        return bonus_strategy_->Calculate(salary);
+      17    }
+      18 private:
+      19    std::unique_ptr<IBonusStrategy> bonus_strategy_;
+      20 };
 
      В.5 Код для методу Push Down Method (ДО)
       1 class Shape {
       2 public:
       3     virtual double GetArea() = 0;
-      4     double GetRadius() { return 0; } // Зайвий метод для Rectangle
-      5 };
-      6 class Rectangle : public Shape { ... }; // Має GetRadius(), що дивно
+      4     // Цей метод зайвий для Rectangle, але він тут є
+      5     double GetRadius() const { return 0.0; } 
+      6 };
+      7 
+      8 class Rectangle : public Shape {
+      9     // Rectangle успадковує GetRadius(), що нонсенс
+      10 };
 
      В.6 Код для методу Push Down Method (ПІСЛЯ)
       1 class Shape {
       2 public:
       3     virtual double GetArea() = 0;
-      4 };
-      5 class Circle : public Shape {
-      6 public:
-      7     double GetRadius() { return radius_; } // Метод там, де треба
-      8 };
+      4     virtual ~Shape() = default;
+      5 };
+      6 
+      7 class Circle : public Shape {
+      8 public:
+      9     double GetRadius() const { return radius_; } // Метод тільки там, де треба
+      10 private:
+      11    double radius_;
+      12 };
+      13 
+      14 class Rectangle : public Shape {
+      15     // Rectangle чистий від методу GetRadius
+      16 };
