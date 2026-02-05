@@ -23,7 +23,8 @@ bool Database::init(const std::string& dbPath) {
                       "email TEXT NOT NULL UNIQUE, "
                       "password_hash TEXT NOT NULL, "
                       "role TEXT NOT NULL, "
-                      "balance REAL DEFAULT 0.0);"
+                      "balance REAL DEFAULT 0.0, "
+                      "level INTEGER DEFAULT 1);" // Added level
                       
                       "CREATE TABLE IF NOT EXISTS waste_categories ("
                       "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -43,12 +44,23 @@ bool Database::init(const std::string& dbPath) {
                       "weight REAL, "
                       "bonus REAL, "
                       "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"
+
+                      "CREATE TABLE IF NOT EXISTS user_sessions ("
+                      "token TEXT PRIMARY KEY, "
+                      "user_id INTEGER, "
+                      "expires_at INTEGER);"
+
+                      "CREATE TABLE IF NOT EXISTS bonus_coefficients ("
+                      "waste_type_id INTEGER, "
+                      "coefficient REAL);"
                       
                       // Seed data for demo
                       "INSERT OR IGNORE INTO recycling_points (name, address, coords) "
                       "VALUES ('Central Point', 'Main St 1', '50.00, 36.23');"
                       "INSERT OR IGNORE INTO waste_categories (name, price_per_kg) "
-                      "VALUES ('Plastic', 5.0), ('Glass', 2.0);";
+                      "VALUES ('Plastic', 5.0), ('Glass', 2.0);"
+                      "INSERT OR IGNORE INTO bonus_coefficients (waste_type_id, coefficient) "
+                      "VALUES (1, 1.2), (2, 1.0);";
 
     char* errMsg = 0;
     if (sqlite3_exec(db, sql, 0, 0, &errMsg) != SQLITE_OK) {

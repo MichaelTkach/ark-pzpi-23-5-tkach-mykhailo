@@ -20,93 +20,90 @@
 
 | Версія | Дата       | Автор      | Опис змін                                       |
 |--------|------------|------------|-------------------------------------------------|
-| 1.0    | 05.02.2025 | Ткач М.    | Розробка архітектури БД та реалізація API на C++|
+| 1.0    | 05.02.2025 | Ткач М.    | Розробка базової архітектури БД та API          |
+| 2.0    | 05.02.2025 | Ткач М.    | Впровадження Layered Architecture, патернів Repository та Strategy |
 
 2 ЗАВДАННЯ
 
-1. Розробити спроектувати структуру бази даних для системи EcoRecycle.
-2. Розробити серверну частину (REST API) з використанням мови C++.
-3. Реалізувати механізм реєстрації, отримання списку пунктів та фіксації здачі сміття.
+1. Спроектувати масштабовану архітектуру серверної частини.
+2. Розробити REST API з використанням мови C++ та патернів проєктування.
+3. Реалізувати бізнес-логіку з використанням DTO та розподілом відповідальності.
 
 3 ОПИС ВИКОНАНОЇ РОБОТИ
 
 3.1 Інженерні рішення
 
-Для реалізації серверної частини було обрано мову програмування **C++**.
-Причини вибору:
-- **Висока продуктивність:** C++ забезпечує мінімальний оверхед при обробці запитів, що важливо для високонавантажених систем.
-- **Енергоефективність:** Оскільки проєкт має "зелену" спрямованість, використання компільованої мови знижує споживання ресурсів процесора порівняно з інтерпретованими мовами, що зменшує вуглецевий слід дата-центрів.
-- **Контроль пам'яті:** Можливість тонкого налаштування використання ресурсів.
+При розробці серверної частини було застосовано **Шарувату архітектуру (Layered Architecture)**, що забезпечує чіткий розподіл відповідальності (Separation of Concerns).
 
-Технологічний стек:
-- **Crow:** Швидкий C++ мікрофреймворк для створення веб-сервісів (натхненний Python Flask).
-- **SQLite3:** Вбудована реляційна база даних, що не потребує окремого сервера, ідеальна для прототипування та вбудованих рішень.
-- **CMake:** Кросплатформна система автоматизації збірки.
+Використані рішення та патерни:
+- **Repository Pattern:** Абстрагує шар доступу до даних (DAL). Класи `UserRepository`, `WasteRepository` інкапсулюють логіку побудови SQL-запитів, дозволяючи бізнес-логіці працювати з об'єктами, а не з таблицями БД.
+- **Strategy Pattern:** Використано для алгоритму нарахування бонусів. Інтерфейс `IBonusStrategy` дозволяє гарячу заміну логіки (наприклад, `EcoHeroBonusStrategy` з підвищеним коефіцієнтом) без зміни основного коду сервісу.
+- **Service Layer:** Класи `AuthService` та `RecyclingService` містять чисту бізнес-логіку, ізольовану від HTTP-контролерів.
+- **DTO (Data Transfer Objects):** Використання структур `RegisterDto` та `RecycleDto` для типізованої передачі даних між шарами контролерів та сервісів.
+- **Security Middleware:** Впроваджено механізм перехоплення запитів для перевірки авторизації.
 
-3.2 Проєктування Бази Даних
+Технологічний стек: C++17, Crow (Microframework), SQLite3, CMake.
 
-Розроблено ER-модель, що складається з таких сутностей:
-1. **users**: Зберігає дані користувачів (email, password_hash, role, balance).
-2. **waste_categories**: Категорії відходів (Plastic, Glass) та їх ціна.
-3. **recycling_points**: Інформація про пункти прийому (адреса, координати).
-4. **transactions**: Журнал здачі сміття (хто, що, скільки, коли).
+3.2 Специфікація API
 
-3.3 Специфікація API
+| Метод | URL                | Опис                                      | Middleware |
+|-------|--------------------|-------------------------------------------|------------|
+| POST  | /api/auth/register | Реєстрація (DTO: RegisterDto)             | -          |
+| POST  | /api/recycle       | Фіксація здачі (DTO: RecycleDto)          | Auth Check |
+| GET   | /api/points        | Отримати список пунктів                   | -          |
+| GET   | /api/user/history  | Історія транзакцій користувача            | Auth Check |
 
-| Метод | URL                | Опис                                      | Тіло запиту (JSON) | Відповідь |
-|-------|--------------------|-------------------------------------------|--------------------|-----------|
-| POST  | /api/auth/register | Реєстрація нового користувача             | {"email": "...", "password": "..."} | 201 Created |
-| GET   | /api/points        | Отримати список пунктів прийому           | - | 200 OK (JSON array) |
-| POST  | /api/recycle       | Зафіксувати здачу сміття та нарахувати бали| {"user_id": 1, "waste_id": 1, "weight": 2.5} | 200 OK |
+3.3 Реалізація
 
-3.4 Реалізація
-
-Реалізовано клас `Database` з використанням патерна Singleton для забезпечення єдиного з'єднання з базою даних.
-
-Фрагмент коду (Database Connection):
+**Приклад інтерфейсу Репозиторію (`include/repositories.h`):**
 ```cpp
-bool Database::init(const std::string& dbPath) {
-    if (sqlite3_open(dbPath.c_str(), &db)) {
-        std::cerr << "Error opening database: " << sqlite3_errmsg(db) << std::endl;
-        return false;
+template <typename T>
+class IRepository {
+public:
+    virtual std::vector<T> getAll() = 0;
+    virtual std::optional<T> getById(int id) = 0;
+};
+
+class UserRepository : public IRepository<User> {
+public:
+    bool create(const User& user) {
+        return Database::getInstance().createUser(user.email, user.password_hash, user.role);
     }
-    // ... створення таблиць ...
-    return true;
-}
+};
 ```
 
-Фрагмент коду (Обробка API запиту в `main.cpp`):
+**Приклад патерну Стратегія (`include/services.h`):**
 ```cpp
-CROW_ROUTE(app, "/api/recycle").methods(crow::HTTPMethod::POST)([](const crow::request& req){
-    auto x = crow::json::load(req.body);
-    if (!x) return crow::response(400);
-    int userId = x["user_id"].i();
-    // ... логіка транзакції ...
-});
+class IBonusStrategy {
+public:
+    virtual double calculate(double weight, double pricePerKg) = 0;
+};
+
+class EcoHeroBonusStrategy : public IBonusStrategy {
+public:
+    double calculate(double weight, double pricePerKg) override {
+        return weight * pricePerKg * 1.5; // Підвищений бонус
+    }
+};
+```
+
+**Приклад Сервісу (`RecyclingService`):**
+```cpp
+double processRecycling(const RecycleDto& dto) {
+    double price = wasteRepo.getPricePerKg(dto.waste_id);
+    auto strategy = getStrategy(userLevel);
+    double bonus = strategy->calculate(dto.weight, price);
+    // ... збереження транзакції ...
+    return bonus;
+}
 ```
 
 4 ВИСНОВКИ
 
-В результаті виконання лабораторної роботи було спроектовано та реалізовано високопродуктивний backend-сервер системи EcoRecycle мовою C++. Використання Crow та SQLite дозволило створити легке та швидке рішення, що відповідає вимогам до сучасних веб-додатків. Реалізовано базові CRUD операції необхідні для функціонування MVP.
+В ході виконання роботи було створено професійну серверну архітектуру системи EcoRecycle. Використання патернів Repository та Strategy забезпечує високу гнучкість системи та спрощує модульне тестування. Впровадження шару сервісів та DTO дозволило ізолювати бізнес-логіку від деталей реалізації HTTP та бази даних. Проєкт відповідає вимогам до сучасних Enterprise-рішень на C++.
 
 5 ВИКОРИСТАНІ ДЖЕРЕЛА
 
-1. Crow C++ Framework Documentation. URL: https://crowcpp.org/
-2. SQLite C Interface Documentation. URL: https://www.sqlite.org/cintro.html
-3. ISO/IEC 14882:2017 Programming Loop C++.
-
-ДОДАТОК А
-Демонстраційний відеоматеріал
-
-Посилання на відео: https://youtu.be/PLACEHOLDER_LAB2 (Очікується запис згідно сценарію)
-
-На відео продемонстровано:
-1. Компіляція серверу за допомогою CMake.
-2. Запуск виконавчого файлу `./server`.
-3. Ініціалізація бази даних та створення таблиць.
-4. Тестування API ендпоінтів за допомогою curl: успішна реєстрація, отримання списку пунктів, створення транзакції.
-
-ДОДАТОК Б
-Графічні матеріали
-
-(Місце для ER-діаграми та діаграми класів, що описують структуру `models.h`)
+1. Evans, E. Domain-Driven Design: Tackling Complexity in the Heart of Software.
+2. Fowler, M. Patterns of Enterprise Application Architecture.
+3. Crow C++ Framework & SQLite Documentation.
