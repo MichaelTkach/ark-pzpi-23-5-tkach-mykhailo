@@ -49,20 +49,60 @@
    ```
    Ця команда збере образ `ecorecycle_server`, створить контейнер та запустить його. Сервер буде доступний за адресою `http://localhost:18080`.
 
-3.3 Фрагменти коду
+3.3 Архітектура розгортання
 
-**Dockerfile:**
+Система складається з одного основного сервісу `server`, який містить скомпільований C++ додаток. База даних SQLite зберігається у файлі, який підмонтовано через Docker Volumes (`./ecorecycle_lab3.db:/app/build/ecorecycle_lab3.db`) для забезпечення персистентності даних між перезапусками контейнера. Порт 18080 прокидається на хост-машину для доступу до API.
+
+4 ВИСНОВОК
+
+В ході лабораторної роботи було успішно виконано контейнеризацію бекенду EcoRecycle. Система збирається та запускається в автоматичному режимі, дані зберігаються персистентно завдяки використанню Docker Volumes. Комплекс лабораторних робіт завершено, створено повнофункціональну систему з IoT-клієнтом, сервером, базою даних та адмін-панеллю.
+
+5 ВИКОРИСТАНІ ДЖЕРЕЛА
+
+1. Docker – офіційна документація. URL: https://docs.docker.com/
+2. Docker Compose – офіційна документація. URL: https://docs.docker.com/compose/
+3. CMake with Docker Best Practices.
+
+ДОДАТОК А
+Посилання на відео: https://youtu.be/fbhgWEwk7zM 
+00:00 Вступ
+00:10 Огляд структури серверної частини (Dockerfile)
+01:31 Огляд конфігурації docker-compose
+02:17 Білд та запуск контейнерів
+02:49 Демонстрація роботи API
+04:27 Тестування персистентності бази даних
+
+ДОДАТОК Б
+Фрагменти програмного коду
+
+Б.1 Dockerfile
 ```dockerfile
 FROM ubuntu:latest
-RUN apt-get update && apt-get install -y g++ cmake make libsqlite3-dev libboost-all-dev
+
+RUN apt-get update && apt-get install -y \
+    g++ \
+    cmake \
+    make \
+    libsqlite3-dev \
+    libboost-all-dev \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
+
 COPY . .
-RUN mkdir -p build && cd build && cmake .. && make
+
+RUN mkdir -p build && cd build && \
+    cmake .. && \
+    make
+
+EXPOSE 18081
+
 CMD ["./build/EcoRecycleServer"]
 ```
 
-**docker-compose.yml:**
+Б.2 docker-compose.yml
 ```yaml
+version: '3'
 services:
   server:
     build: .
@@ -71,11 +111,3 @@ services:
     volumes:
       - ./ecorecycle_lab3.db:/app/build/ecorecycle_lab3.db
 ```
-
-4 ВИСНОВКИ
-
-В ході лабораторної роботи було успішно виконано контейнеризацію бекенду EcoRecycle. Система збирається та запускається в автоматичному режимі, дані зберігаються персистентно завдяки використанню Docker Volumes. Комплекс лабораторних робіт завершено, створено повнофункціональну систему з IoT-клієнтом, сервером, базою даних та адмін-панеллю.
-
-ДОДАТОК А
-Демонстраційний відеоматеріал
-Посилання: https://youtu.be/FINAL_DEMO_FAKE
