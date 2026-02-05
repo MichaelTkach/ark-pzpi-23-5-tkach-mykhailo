@@ -107,3 +107,11 @@ double processRecycling(const RecycleDto& dto) {
 1. Evans, E. Domain-Driven Design: Tackling Complexity in the Heart of Software.
 2. Fowler, M. Patterns of Enterprise Application Architecture.
 3. Crow C++ Framework & SQLite Documentation.
+
+ДОДАТОК А
+Відеозапис: https://youtu.be/XTheRRIz3hA 
+00:00 Діаграма прецендентів 
+00:38 Базова діаграма класів
+01:01 ER діаграма
+01:29 Опис серверної частини
+02:55 Тестування API
