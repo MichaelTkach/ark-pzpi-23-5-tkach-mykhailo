@@ -59,36 +59,60 @@ bool Database::init(const std::string& dbPath) {
 }
 
 bool Database::createUser(const std::string& email, const std::string& password_hash, const std::string& role) {
-    std::string sql = "INSERT INTO users (email, password_hash, role, is_active) VALUES ('" + 
-                      email + "', '" + password_hash + "', '" + role + "', 1);";
-    char* errMsg = 0;
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        sqlite3_free(errMsg);
+    const char* sql = "INSERT INTO users (email, password_hash, role, is_active) VALUES (?, ?, ?, 1);";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, email.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 2, password_hash.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 3, role.c_str(), -1, SQLITE_STATIC);
+        
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            std::cerr << "Execution failed: " << sqlite3_errmsg(db) << std::endl;
+            sqlite3_finalize(stmt);
+            return false;
+        }
+    } else {
+        std::cerr << "Prepare failed: " << sqlite3_errmsg(db) << std::endl;
         return false;
     }
+    sqlite3_finalize(stmt);
     return true;
 }
 
 bool Database::blockUser(int userId, bool block) {
     int status = block ? 0 : 1;
-    std::string sql = "UPDATE users SET is_active = " + std::to_string(status) + 
-                      " WHERE id = " + std::to_string(userId) + ";";
-    char* errMsg = 0;
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        sqlite3_free(errMsg);
+    const char* sql = "UPDATE users SET is_active = ? WHERE id = ?;";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, status);
+        sqlite3_bind_int(stmt, 2, userId);
+        
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            return false;
+        }
+    } else {
         return false;
     }
+    sqlite3_finalize(stmt);
     return true;
 }
 
 bool Database::addWasteType(const std::string& name, double price) {
-    std::string sql = "INSERT INTO waste_categories (name, price_per_kg) VALUES ('" + 
-                      name + "', " + std::to_string(price) + ");";
-    char* errMsg = 0;
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        sqlite3_free(errMsg);
+    const char* sql = "INSERT INTO waste_categories (name, price_per_kg) VALUES (?, ?);";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, name.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_double(stmt, 2, price);
+        
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            return false;
+        }
+    } else {
         return false;
     }
+    sqlite3_finalize(stmt);
     return true;
 }
 
@@ -128,14 +152,22 @@ std::vector<WasteCategory> Database::getAllWasteTypes() {
 }
 
 bool Database::createTransaction(int userId, int wasteId, double weight, double bonus) {
-    std::string sql = "INSERT INTO transactions (user_id, waste_id, weight, bonus) VALUES (" + 
-                      std::to_string(userId) + ", " + std::to_string(wasteId) + ", " + 
-                      std::to_string(weight) + ", " + std::to_string(bonus) + ");";
-    char* errMsg = 0;
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        sqlite3_free(errMsg);
+    const char* sql = "INSERT INTO transactions (user_id, waste_id, weight, bonus) VALUES (?, ?, ?, ?);";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
+        sqlite3_bind_int(stmt, 1, userId);
+        sqlite3_bind_int(stmt, 2, wasteId);
+        sqlite3_bind_double(stmt, 3, weight);
+        sqlite3_bind_double(stmt, 4, bonus);
+        
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            sqlite3_finalize(stmt);
+            return false;
+        }
+    } else {
         return false;
     }
+    sqlite3_finalize(stmt);
     return true;
 }
 

@@ -38,7 +38,7 @@ int main() {
     
     CROW_ROUTE(app, "/api/stats")(Controllers::getStats);
 
-    app.port(18081).multithreaded().run();
+    app.port(18080).multithreaded().run();
     
     return 0;
 }
