@@ -189,6 +189,28 @@ int Database::getTransactionCount() {
     return res;
 }
 
+std::vector<UserStatDto> Database::getTopUsers(int limit) {
+    std::vector<UserStatDto> users;
+    // Simple join to get email (assuming users exist)
+    std::string sql = "SELECT u.email, SUM(t.weight) as total " 
+                      "FROM transactions t "
+                      "JOIN users u ON t.user_id = u.id "
+                      "GROUP BY u.id "
+                      "ORDER BY total DESC LIMIT " + std::to_string(limit) + ";";
+                      
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, 0) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            UserStatDto u;
+            u.email = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            u.total_weight = sqlite3_column_double(stmt, 1);
+            users.push_back(u);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return users;
+}
+
 User Database::getUserByEmail(const std::string& email) {
     User u = {0, "", "", "", 0.0, 1, true};
     return u;

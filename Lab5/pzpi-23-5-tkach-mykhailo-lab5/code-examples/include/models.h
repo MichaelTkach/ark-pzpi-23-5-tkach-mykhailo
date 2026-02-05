@@ -57,4 +57,17 @@ struct BlockUserDto {
     bool block;
 };
 
+struct UserStatDto {
+    std::string email;
+    double total_weight;
+};
+
+struct GlobalStatsDto {
+    double total_weight;
+    double total_bonuses;
+    int transactions_count;
+    double average_weight_per_transaction;
+    std::vector<UserStatDto> top_users;
+};
+
 #endif

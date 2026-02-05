@@ -29,6 +29,7 @@ public:
     double getTotalWeight();
     double getTotalBonuses();
     int getTransactionCount();
+    std::vector<UserStatDto> getTopUsers(int limit);
 
 private:
     Database() : db(nullptr) {}

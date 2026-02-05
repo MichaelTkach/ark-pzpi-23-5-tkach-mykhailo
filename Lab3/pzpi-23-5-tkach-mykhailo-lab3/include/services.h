@@ -96,4 +96,24 @@ public:
     }
 };
 
+class StatsService {
+public:
+    GlobalStatsDto getGlobalStats() {
+        GlobalStatsDto stats;
+        stats.total_weight = Database::getInstance().getTotalWeight();
+        stats.total_bonuses = Database::getInstance().getTotalBonuses();
+        stats.transactions_count = Database::getInstance().getTransactionCount();
+        
+        if (stats.transactions_count > 0) {
+            stats.average_weight_per_transaction = stats.total_weight / stats.transactions_count;
+        } else {
+            stats.average_weight_per_transaction = 0.0;
+        }
+
+        stats.top_users = Database::getInstance().getTopUsers(3);
+        
+        return stats;
+    }
+};
+
 #endif
