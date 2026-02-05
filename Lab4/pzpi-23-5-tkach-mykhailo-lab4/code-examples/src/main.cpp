@@ -11,7 +11,7 @@ const int POINT_ID = 101;
 const int BUTTON_PIN = 15;
 const int LED_PIN = 2; 
 
-// Configuration Constants
+
 const int USER_ID = 1;
 const int WASTE_ID = 1;
 

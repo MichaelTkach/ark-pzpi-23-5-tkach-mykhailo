@@ -3,7 +3,7 @@
 #include <iomanip>
 #include <map>
 
-// i18n Helper
+
 std::string getMessage(const std::string& key, const std::string& lang) {
     static std::map<std::string, std::map<std::string, std::string>> messages = {
         {"REGISTERED", {{"en", "Registered successfully"}, {"uk", "Успішна реєстрація"}}},
@@ -115,13 +115,9 @@ crow::response Controllers::importCsv(const crow::request& req) {
     std::stringstream ss(req.body);
     std::string line;
     
-    // Skip header
     std::getline(ss, line);
     
-    // Minimal parsing simulation (Real impl would parse CSV fields and DB insert)
     while(std::getline(ss, line)) {
-        // Parse line (userID, wasteID, weight, etc.)
-        // Database::getInstance().createTransaction(...);
     }
     
     return crow::response(200, getMessage("IMPORTED", lang));

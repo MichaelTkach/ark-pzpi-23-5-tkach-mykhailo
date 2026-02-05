@@ -22,7 +22,7 @@ int main() {
     
     CROW_ROUTE(app, "/api/stats")(Controllers::getStats);
 
-    // Security Middleware
+
     app.route_dynamic("/api/admin/*")
     ([](const crow::request& req, crow::response& res) {
         if (req.get_header_value("Authorization").empty()) {
