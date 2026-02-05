@@ -18,24 +18,21 @@ public:
     // User methods
     bool createUser(const std::string& email, const std::string& password_hash, const std::string& role);
     User getUserByEmail(const std::string& email);
+    bool blockUser(int userId, bool block); // Lab 3
     
-    // Lab 3: User Management
-    bool blockUser(int userId);
-    bool isUserActive(int userId);
-    
-    // Recycling Point methods
+    // Waste & Point methods
+    bool addWasteType(const std::string& name, double price); // Lab 3
     std::vector<RecyclingPoint> getAllPoints();
+    std::vector<WasteCategory> getAllWasteTypes();
     
     // Transaction methods
     bool createTransaction(int userId, int wasteId, double weight, double bonus);
-    std::vector<Transaction> getAllTransactions(); // For CSV export
+    std::vector<Transaction> getAllTransactions(); // Lab 3 Export
     
-    // Lab 3: Waste Management
-    bool addWasteType(const std::string& name, double price);
-    
-    // Lab 3: Stats Aggregation
+    // Stats methods
     double getTotalWeight();
-    std::vector<UserStatsDto> getTopUsers(int limit);
+    double getTotalBonuses();
+    int getTransactionCount();
 
 private:
     Database() : db(nullptr) {}

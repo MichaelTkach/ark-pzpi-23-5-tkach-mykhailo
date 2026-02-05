@@ -7,9 +7,7 @@ Database& Database::getInstance() {
 }
 
 Database::~Database() {
-    if (db) {
-        sqlite3_close(db);
-    }
+    if (db) sqlite3_close(db);
 }
 
 bool Database::init(const std::string& dbPath) {
@@ -18,7 +16,6 @@ bool Database::init(const std::string& dbPath) {
         return false;
     }
 
-    // Lab 3: Added is_active to users
     const char* sql = "CREATE TABLE IF NOT EXISTS users ("
                       "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                       "email TEXT NOT NULL UNIQUE, "
@@ -26,7 +23,7 @@ bool Database::init(const std::string& dbPath) {
                       "role TEXT NOT NULL, "
                       "balance REAL DEFAULT 0.0, "
                       "level INTEGER DEFAULT 1, "
-                      "is_active INTEGER DEFAULT 1);" // 1 = true
+                      "is_active INTEGER DEFAULT 1);"
                       
                       "CREATE TABLE IF NOT EXISTS waste_categories ("
                       "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -46,23 +43,11 @@ bool Database::init(const std::string& dbPath) {
                       "weight REAL, "
                       "bonus REAL, "
                       "timestamp DATETIME DEFAULT CURRENT_TIMESTAMP);"
-
-                      "CREATE TABLE IF NOT EXISTS user_sessions ("
-                      "token TEXT PRIMARY KEY, "
-                      "user_id INTEGER, "
-                      "expires_at INTEGER);"
-
-                      "CREATE TABLE IF NOT EXISTS bonus_coefficients ("
-                      "waste_type_id INTEGER, "
-                      "coefficient REAL);"
                       
-                      // Seed data
                       "INSERT OR IGNORE INTO recycling_points (name, address, coords) "
                       "VALUES ('Central Point', 'Main St 1', '50.00, 36.23');"
                       "INSERT OR IGNORE INTO waste_categories (name, price_per_kg) "
-                      "VALUES ('Plastic', 5.0), ('Glass', 2.0);"
-                      "INSERT OR IGNORE INTO bonus_coefficients (waste_type_id, coefficient) "
-                      "VALUES (1, 1.2), (2, 1.0);";
+                      "VALUES ('Plastic', 5.0), ('Glass', 2.0);";
 
     char* errMsg = 0;
     if (sqlite3_exec(db, sql, 0, 0, &errMsg) != SQLITE_OK) {
@@ -70,44 +55,41 @@ bool Database::init(const std::string& dbPath) {
         sqlite3_free(errMsg);
         return false;
     }
-    
     return true;
 }
 
 bool Database::createUser(const std::string& email, const std::string& password_hash, const std::string& role) {
     std::string sql = "INSERT INTO users (email, password_hash, role, is_active) VALUES ('" + 
-                      email + "', '" + password_hash + "', '" + role + "', 1);";
+                      email + "', '" + password_hash + "', '" + role + "', 1);"; // Default active
     char* errMsg = 0;
     if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        std::cerr << "Register error: " << errMsg << std::endl;
         sqlite3_free(errMsg);
         return false;
     }
     return true;
 }
 
-User Database::getUserByEmail(const std::string& email) {
-    User user = {0, "", "", "", 0.0, 1, true};
-    // Implement actual generic SELECT if needed, keeping stub for now or using minimal valid
-    // For lab purposes, we assume auth works
-    return user; 
-}
-
-bool Database::blockUser(int userId) {
-    std::string sql = "UPDATE users SET is_active = 0 WHERE id = " + std::to_string(userId) + ";";
+bool Database::blockUser(int userId, bool block) {
+    int status = block ? 0 : 1;
+    std::string sql = "UPDATE users SET is_active = " + std::to_string(status) + 
+                      " WHERE id = " + std::to_string(userId) + ";";
     char* errMsg = 0;
     if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        std::cerr << "Block user error: " << errMsg << std::endl;
         sqlite3_free(errMsg);
         return false;
     }
     return true;
 }
 
-bool Database::isUserActive(int userId) {
-    // Mock check - in logic we'd SELECT is_active FROM users WHERE id=...
-    // Return true for simplicity unless specifically blocked in session context
-    return true; 
+bool Database::addWasteType(const std::string& name, double price) {
+    std::string sql = "INSERT INTO waste_categories (name, price_per_kg) VALUES ('" + 
+                      name + "', " + std::to_string(price) + ");";
+    char* errMsg = 0;
+    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
+        sqlite3_free(errMsg);
+        return false;
+    }
+    return true;
 }
 
 std::vector<RecyclingPoint> Database::getAllPoints() {
@@ -128,8 +110,24 @@ std::vector<RecyclingPoint> Database::getAllPoints() {
     return points;
 }
 
+std::vector<WasteCategory> Database::getAllWasteTypes() {
+    std::vector<WasteCategory> types;
+    const char* sql = "SELECT id, name, price_per_kg FROM waste_categories;";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
+        while (sqlite3_step(stmt) == SQLITE_ROW) {
+            WasteCategory w;
+            w.id = sqlite3_column_int(stmt, 0);
+            w.name = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+            w.price_per_kg = sqlite3_column_double(stmt, 2);
+            types.push_back(w);
+        }
+    }
+    sqlite3_finalize(stmt);
+    return types;
+}
+
 bool Database::createTransaction(int userId, int wasteId, double weight, double bonus) {
-    // Check if active first (logic usually in Service, but DB constraint good too)
     std::string sql = "INSERT INTO transactions (user_id, waste_id, weight, bonus) VALUES (" + 
                       std::to_string(userId) + ", " + std::to_string(wasteId) + ", " + 
                       std::to_string(weight) + ", " + std::to_string(bonus) + ");";
@@ -161,45 +159,38 @@ std::vector<Transaction> Database::getAllTransactions() {
     return trans;
 }
 
-bool Database::addWasteType(const std::string& name, double price) {
-    std::string sql = "INSERT INTO waste_categories (name, price_per_kg) VALUES ('" + 
-                      name + "', " + std::to_string(price) + ");";
-    char* errMsg = 0;
-    if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
-        sqlite3_free(errMsg);
-        return false;
-    }
-    return true;
-}
-
 double Database::getTotalWeight() {
-    const char* sql = "SELECT SUM(weight) FROM transactions;";
     sqlite3_stmt* stmt;
-    double total = 0.0;
-    if (sqlite3_prepare_v2(db, sql, -1, &stmt, 0) == SQLITE_OK) {
-        if (sqlite3_step(stmt) == SQLITE_ROW) {
-            total = sqlite3_column_double(stmt, 0);
-        }
+    double res = 0;
+    if (sqlite3_prepare_v2(db, "SELECT SUM(weight) FROM transactions;", -1, &stmt, 0) == SQLITE_OK) {
+        if (sqlite3_step(stmt) == SQLITE_ROW) res = sqlite3_column_double(stmt, 0);
     }
     sqlite3_finalize(stmt);
-    return total;
+    return res;
 }
 
-std::vector<UserStatsDto> Database::getTopUsers(int limit) {
-    std::vector<UserStatsDto> users;
-    // Aggregation query
-    std::string sql = "SELECT user_id, SUM(weight) as total_w FROM transactions "
-                      "GROUP BY user_id ORDER BY total_w DESC LIMIT " + std::to_string(limit) + ";";
+double Database::getTotalBonuses() {
     sqlite3_stmt* stmt;
-    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, 0) == SQLITE_OK) {
-        while (sqlite3_step(stmt) == SQLITE_ROW) {
-            UserStatsDto u;
-            u.user_id = sqlite3_column_int(stmt, 0);
-            u.total_weight = sqlite3_column_double(stmt, 1);
-            u.email = "user" + std::to_string(u.user_id) + "@test.com"; // Mock email for stats
-            users.push_back(u);
-        }
+    double res = 0;
+    if (sqlite3_prepare_v2(db, "SELECT SUM(bonus) FROM transactions;", -1, &stmt, 0) == SQLITE_OK) {
+        if (sqlite3_step(stmt) == SQLITE_ROW) res = sqlite3_column_double(stmt, 0);
     }
     sqlite3_finalize(stmt);
-    return users;
+    return res;
+}
+
+int Database::getTransactionCount() {
+    sqlite3_stmt* stmt;
+    int res = 0;
+    if (sqlite3_prepare_v2(db, "SELECT COUNT(*) FROM transactions;", -1, &stmt, 0) == SQLITE_OK) {
+        if (sqlite3_step(stmt) == SQLITE_ROW) res = sqlite3_column_int(stmt, 0);
+    }
+    sqlite3_finalize(stmt);
+    return res;
+}
+
+User Database::getUserByEmail(const std::string& email) {
+    User u = {0, "", "", "", 0.0, 1, true};
+    // Proper impl required for auth, simplified here
+    return u;
 }

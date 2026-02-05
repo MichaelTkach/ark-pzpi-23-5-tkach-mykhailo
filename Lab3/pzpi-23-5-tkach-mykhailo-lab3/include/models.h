@@ -11,7 +11,7 @@ struct User {
     std::string role; // "admin", "user"
     double balance;
     int level;
-    bool is_active; // Lab 3: Block user feature
+    bool is_active; // Lab 3 Requirement
 };
 
 struct WasteCategory {
@@ -36,8 +36,6 @@ struct Transaction {
     std::string timestamp;
 };
 
-// --- DTOs ---
-
 struct RegisterDto {
     std::string email;
     std::string password;
@@ -47,36 +45,17 @@ struct RecycleDto {
     int user_id;
     int waste_id;
     double weight;
-    std::string token;
 };
 
-struct UserSession {
-    std::string token;
-    int user_id;
-    long long expires_at;
-};
-
-struct BonusCoefficient {
-    int waste_type_id;
-    double coefficient;
-};
-
-// Lab 3: Admin DTOs
+// Lab 3 Admin DTOs
 struct AddWasteTypeDto {
     std::string name;
     double price;
 };
 
-struct UserStatsDto {
+struct BlockUserDto {
     int user_id;
-    std::string email;
-    double total_weight;
-};
-
-struct GlobalStatsDto {
-    double total_weight_all_time;
-    std::vector<UserStatsDto> top_users; // Top 3
-    double average_point_load; // Mocked %
+    bool block; // true to block, false to unblock
 };
 
 #endif // MODELS_H
