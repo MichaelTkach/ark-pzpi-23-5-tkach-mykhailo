@@ -8,9 +8,9 @@ struct User {
     int id;
     std::string email;
     std::string password_hash;
-    std::string role; // "admin", "user"
+    std::string role;
     double balance;
-    int level; // New field: User level (1-5)
+    int level;
 };
 
 struct WasteCategory {
@@ -35,8 +35,6 @@ struct Transaction {
     std::string timestamp;
 };
 
-// --- DTOs (Data Transfer Objects) ---
-
 struct RegisterDto {
     std::string email;
     std::string password;
@@ -46,7 +44,7 @@ struct RecycleDto {
     int user_id;
     int waste_id;
     double weight;
-    std::string token; // For auth simulation
+    std::string token;
 };
 
 struct UserSession {
@@ -60,4 +58,4 @@ struct BonusCoefficient {
     double coefficient;
 };
 
-#endif // MODELS_H
+#endif

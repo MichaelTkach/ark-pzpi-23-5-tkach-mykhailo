@@ -5,8 +5,6 @@
 #include <memory>
 #include <ctime>
 
-// --- Strategy Pattern for Bonus Calculation ---
-
 class IBonusStrategy {
 public:
     virtual ~IBonusStrategy() = default;
@@ -16,24 +14,21 @@ public:
 class StandardBonusStrategy : public IBonusStrategy {
 public:
     double calculate(double weight, double pricePerKg) override {
-        return weight * pricePerKg; // Standard calculation
+        return weight * pricePerKg;
     }
 };
 
 class EcoHeroBonusStrategy : public IBonusStrategy {
 public:
     double calculate(double weight, double pricePerKg) override {
-        return weight * pricePerKg * 1.5; // 50% extra bonus for Heroes
+        return weight * pricePerKg * 1.5;
     }
 };
-
-// --- Services (Business Logic Layer) ---
 
 class AuthService {
     UserRepository userRepo;
 public:
     std::string hashPassword(const std::string& password) {
-        // "Salting" simulation
         return password + "_salt_v1";
     }
 
@@ -52,7 +47,6 @@ class RecyclingService {
     UserRepository userRepo;
     
 public:
-    // Factory method for strategy (simplified)
     std::unique_ptr<IBonusStrategy> getStrategy(int userLevel) {
         if (userLevel >= 5) {
             return std::make_unique<EcoHeroBonusStrategy>();
@@ -61,19 +55,14 @@ public:
     }
 
     double processRecycling(const RecycleDto& dto) {
-        // 1. Get Waste Price
         double price = wasteRepo.getPricePerKg(dto.waste_id);
         
-        // 2. Get User Level (Mocked to 1 for now, or fetch from repo)
         int userLevel = 1; 
         
-        // 3. Select Strategy
         auto strategy = getStrategy(userLevel);
         
-        // 4. Calculate Bonus
         double bonus = strategy->calculate(dto.weight, price);
         
-        // 5. Create Transaction
         Transaction t;
         t.user_id = dto.user_id;
         t.waste_id = dto.waste_id;
@@ -87,4 +76,4 @@ public:
     }
 };
 
-#endif // SERVICES_H
+#endif

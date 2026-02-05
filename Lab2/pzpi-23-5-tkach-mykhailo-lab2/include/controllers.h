@@ -1,7 +1,7 @@
 #ifndef CONTROLLERS_H
 #define CONTROLLERS_H
 
-#include "crow.h" // Assuming crow is header-only and available
+#include "crow.h"
 #include "database.h"
 
 class Controllers {
@@ -11,4 +11,4 @@ public:
     static crow::response recycle(const crow::request& req);
 };
 
-#endif // CONTROLLERS_H
+#endif

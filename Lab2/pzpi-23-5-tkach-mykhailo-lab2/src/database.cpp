@@ -24,7 +24,7 @@ bool Database::init(const std::string& dbPath) {
                       "password_hash TEXT NOT NULL, "
                       "role TEXT NOT NULL, "
                       "balance REAL DEFAULT 0.0, "
-                      "level INTEGER DEFAULT 1);" // Added level
+                      "level INTEGER DEFAULT 1);"
                       
                       "CREATE TABLE IF NOT EXISTS waste_categories ("
                       "id INTEGER PRIMARY KEY AUTOINCREMENT, "
@@ -54,7 +54,6 @@ bool Database::init(const std::string& dbPath) {
                       "waste_type_id INTEGER, "
                       "coefficient REAL);"
                       
-                      // Seed data for demo
                       "INSERT OR IGNORE INTO recycling_points (name, address, coords) "
                       "VALUES ('Central Point', 'Main St 1', '50.00, 36.23');"
                       "INSERT OR IGNORE INTO waste_categories (name, price_per_kg) "
@@ -85,9 +84,7 @@ bool Database::createUser(const std::string& email, const std::string& password_
 }
 
 User Database::getUserByEmail(const std::string& email) {
-    // Simplified: in real app, use prepared statements to prevent injection
     User user = {0, "", "", "", 0.0};
-    // Implementation of query logic would go here
     return user; 
 }
 
@@ -122,7 +119,6 @@ bool Database::createTransaction(int userId, int wasteId, double weight, double 
         return false;
     }
     
-    // Update balance
     std::string updateSql = "UPDATE users SET balance = balance + " + std::to_string(bonus) + 
                             " WHERE id = " + std::to_string(userId) + ";";
     sqlite3_exec(db, updateSql.c_str(), 0, 0, 0);

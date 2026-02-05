@@ -2,18 +2,13 @@
 #include "database.h"
 #include "services.h"
 
-// Middleware for simulated Authorization
 struct SecurityMiddleware {
     struct context {};
 
     void before_handle(crow::request& req, crow::response& res, context& ctx) {
-        // Simple check for demonstration
         if (req.url == "/api/recycle" && req.method == crow::HTTPMethod::POST) {
             auto authHeader = req.get_header_value("Authorization");
             if (authHeader.empty() || authHeader.find("Bearer ") == std::string::npos) {
-                // In a real scenario, we would block here.
-                // For demo simplicity, we log warning but proceed or throw 401.
-                // res.code = 401; res.end(); 
                 std::cout << "[SECURITY] Warning: Unsecured request to /api/recycle" << std::endl;
             }
         }
@@ -23,20 +18,15 @@ struct SecurityMiddleware {
 };
 
 int main() {
-    // Initialize Database
     if (!Database::getInstance().init("ecorecycle.db")) {
         return 1;
     }
 
     crow::App<SecurityMiddleware> app;
 
-    // Dependency Injection (Manual)
     AuthService authService;
     RecyclingService recycleService;
 
-    // --- Routes ---
-
-    // POST /api/auth/register
     CROW_ROUTE(app, "/api/auth/register").methods(crow::HTTPMethod::POST)
     ([&authService](const crow::request& req){
         auto x = crow::json::load(req.body);
@@ -52,7 +42,6 @@ int main() {
         return crow::response(500, "Registration failed");
     });
 
-    // POST /api/recycle
     CROW_ROUTE(app, "/api/recycle").methods(crow::HTTPMethod::POST)
     ([&recycleService](const crow::request& req){
         auto x = crow::json::load(req.body);
@@ -75,7 +64,6 @@ int main() {
         return crow::response(500, "Transaction failed");
     });
     
-    // GET /api/points (Legacy controller logic kept for simplicity or refactor if needed)
     CROW_ROUTE(app, "/api/points")([](){
         auto points = Database::getInstance().getAllPoints();
         crow::json::wvalue query_result;
@@ -88,7 +76,6 @@ int main() {
         return crow::response(query_result);
     });
 
-    // Run Server
     std::cout << "Starting EcoRecycle Server (Advanced Arch)..." << std::endl;
     app.port(18080).multithreaded().run();
     

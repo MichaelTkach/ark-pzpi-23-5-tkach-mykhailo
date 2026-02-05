@@ -32,7 +32,7 @@ crow::response Controllers::recycle(const crow::request& req) {
     int wasteId = x["waste_id"].i();
     double weight = x["weight"].d();
     
-    double bonus = weight * 5.0; // Simplified calculation
+    double bonus = weight * 5.0; 
     
     if (Database::getInstance().createTransaction(userId, wasteId, weight, bonus)) {
         crow::json::wvalue res;
@@ -41,8 +41,6 @@ crow::response Controllers::recycle(const crow::request& req) {
     }
     return crow::response(500);
 }
-
-// --- Lab 3 Implementations ---
 
 crow::response Controllers::addWasteType(const crow::request& req) {
     auto x = crow::json::load(req.body);
@@ -60,13 +58,11 @@ crow::response Controllers::addWasteType(const crow::request& req) {
 crow::response Controllers::blockUser(const crow::request& req) {
     auto x = crow::json::load(req.body);
     if (!x) {
-        // Fallback: Check if we can parse query params for simpler PUT
-        // But spec suggests body usually. Let's assume body for now or query param `id`.
         return crow::response(400);
     }
     
     int userId = x["user_id"].i();
-    bool block = x["block"].b(); // Expecting boolean
+    bool block = x["block"].b();
     
     if (Database::getInstance().blockUser(userId, block)) {
         return crow::response(200, block ? "User blocked" : "User unblocked");
@@ -106,7 +102,7 @@ crow::response Controllers::getStats(const crow::request& req) {
     res["total_weight"] = totalWeight;
     res["total_bonuses"] = totalBonuses;
     res["transactions_count"] = count;
-    res["average_weight_per_transaction"] = avgWeight; // Math calculation
+    res["average_weight_per_transaction"] = avgWeight;
     
     return crow::response(res);
 }

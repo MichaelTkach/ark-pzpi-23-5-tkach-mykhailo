@@ -8,10 +8,10 @@ struct User {
     int id;
     std::string email;
     std::string password_hash;
-    std::string role; // "admin", "user"
+    std::string role;
     double balance;
     int level;
-    bool is_active; // Lab 3 Requirement
+    bool is_active;
 };
 
 struct WasteCategory {
@@ -47,7 +47,6 @@ struct RecycleDto {
     double weight;
 };
 
-// Lab 3 Admin DTOs
 struct AddWasteTypeDto {
     std::string name;
     double price;
@@ -55,7 +54,7 @@ struct AddWasteTypeDto {
 
 struct BlockUserDto {
     int user_id;
-    bool block; // true to block, false to unblock
+    bool block;
 };
 
-#endif // MODELS_H
+#endif

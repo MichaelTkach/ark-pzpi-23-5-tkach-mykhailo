@@ -60,7 +60,7 @@ bool Database::init(const std::string& dbPath) {
 
 bool Database::createUser(const std::string& email, const std::string& password_hash, const std::string& role) {
     std::string sql = "INSERT INTO users (email, password_hash, role, is_active) VALUES ('" + 
-                      email + "', '" + password_hash + "', '" + role + "', 1);"; // Default active
+                      email + "', '" + password_hash + "', '" + role + "', 1);";
     char* errMsg = 0;
     if (sqlite3_exec(db, sql.c_str(), 0, 0, &errMsg) != SQLITE_OK) {
         sqlite3_free(errMsg);
@@ -191,6 +191,5 @@ int Database::getTransactionCount() {
 
 User Database::getUserByEmail(const std::string& email) {
     User u = {0, "", "", "", 0.0, 1, true};
-    // Proper impl required for auth, simplified here
     return u;
 }

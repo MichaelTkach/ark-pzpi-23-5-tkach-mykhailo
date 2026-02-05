@@ -21,10 +21,9 @@ public:
     }
     
     bool block(int userId) {
-        return Database::getInstance().blockUser(userId);
+        return Database::getInstance().blockUser(userId, true);
     }
     
-    // Stub
     std::vector<User> getAll() override { return {}; }
     std::optional<User> getById(int id) override { return std::nullopt; }
 };
@@ -36,7 +35,6 @@ public:
     }
 
     std::vector<WasteCategory> getAll() override {
-        // Mock return
         return { {1, "Plastic", 5.0}, {2, "Glass", 2.0} };
     }
     std::optional<WasteCategory> getById(int id) override {
@@ -61,4 +59,4 @@ public:
     }
 };
 
-#endif // REPOSITORIES_H
+#endif

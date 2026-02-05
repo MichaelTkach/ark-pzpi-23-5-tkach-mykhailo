@@ -8,7 +8,6 @@ crow::response Controllers::registerUser(const crow::request& req) {
     std::string email = x["email"].s();
     std::string password = x["password"].s();
     
-    // Very basic hashing (placeholder)
     std::string hash = password + "_hashed";
     
     if (Database::getInstance().createUser(email, hash, "user")) {
@@ -40,7 +39,6 @@ crow::response Controllers::recycle(const crow::request& req) {
     int wasteId = x["waste_id"].i();
     double weight = x["weight"].d();
     
-    // Simplified bonus calculation
     double bonus = weight * 5.0; 
     
     if (Database::getInstance().createTransaction(userId, wasteId, weight, bonus)) {
