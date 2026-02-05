@@ -39,4 +39,11 @@
 
 # debug information files
 *.dwo
+
+# Project specific
 video_scenario.txt
+video_scenario_final.txt
+build/
+.pio/
+.DS_Store
+*.db
